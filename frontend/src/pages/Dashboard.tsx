@@ -12,15 +12,25 @@ export function Dashboard() {
   const [activeDataset, setActiveDataset] = useState<string>('A');
   const [activeMetric, setActiveMetric] = useState<string>('traffic');
 
-  // Once datasets load, default to the first one
   if (!dsLoading && datasets.length > 0 && !datasets.includes(activeDataset)) {
     setActiveDataset(datasets[0]);
   }
 
-  const { data: summary, loading: summaryLoading, error: summaryError } = useSummary(activeDataset);
-  const { data: days, loading: daysLoading } = useDays(activeDataset);
+  const {
+    data: summary,
+    initialLoading: summaryInitialLoading,
+    refreshing: summaryRefreshing,
+    error: summaryError,
+  } = useSummary(activeDataset);
 
-  // Totals for the funnel (sum of the full period)
+  const {
+    data: days,
+    initialLoading: daysInitialLoading,
+    refreshing: daysRefreshing,
+  } = useDays(activeDataset);
+
+  const isRefreshing = summaryRefreshing || daysRefreshing;
+
   const funnelTotals = useMemo(() => {
     if (!summary) return { traffic: null, leads_created: null, leads_qualified: null, deals_created: null, deals_won: null };
     const getTotal = (key: string) => summary.metrics.find((m) => m.key === key)?.total ?? null;
@@ -58,11 +68,14 @@ export function Dashboard() {
         </div>
       </header>
 
+      {/* ── Thin progress bar — visible only while refreshing (not initial load) ── */}
+      <div className={`refresh-bar ${isRefreshing ? 'refresh-bar--active' : ''}`} />
+
       {/* ── Body ── */}
       <main className="dashboard-body">
 
-        {/* Loading / Error states */}
-        {summaryLoading && (
+        {/* Initial load spinner — only shown the very first time (no data yet) */}
+        {summaryInitialLoading && (
           <div className="state-center">
             <div className="spinner" />
             Cargando métricas…
@@ -75,8 +88,10 @@ export function Dashboard() {
           </div>
         )}
 
-        {summary && !summaryLoading && (
-          <>
+        {/* Content — always visible once data exists, fades subtly while refreshing */}
+        {summary && !summaryInitialLoading && (
+          <div className={isRefreshing ? 'content-refreshing' : 'content-loaded'}>
+
             {/* ── KPI Grid ── */}
             <section>
               <div className="kpi-grid">
@@ -90,8 +105,10 @@ export function Dashboard() {
             <section className="charts-row">
               <FunnelPanel funnel={summary.funnel} totals={funnelTotals} />
 
-              {daysLoading ? (
-                <div className="state-center card"><div className="spinner" /> Cargando serie…</div>
+              {daysInitialLoading ? (
+                <div className="state-center card">
+                  <div className="spinner" /> Cargando serie…
+                </div>
               ) : (
                 <MetricChart
                   days={days}
@@ -101,7 +118,8 @@ export function Dashboard() {
                 />
               )}
             </section>
-          </>
+
+          </div>
         )}
       </main>
     </div>

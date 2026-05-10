@@ -47,6 +47,53 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Refresh progress bar ────────────────────────────────────────────────────── */
+/* Thin 2px bar below the header — only visible while re-fetching (not initial load) */
+.refresh-bar {
+  height: 2px;
+  width: 100%;
+  overflow: hidden;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.refresh-bar--active {
+  background: var(--bg-surface);
+}
+
+.refresh-bar--active::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: slide 1s ease-in-out infinite;
+}
+
+@keyframes slide {
+  0%   { transform: translateX(-200%); }
+  100% { transform: translateX(400%); }
+}
+
+/* ── Content transition on dataset switch ────────────────────────────────────── */
+.content-loaded {
+  opacity: 1;
+  transition: opacity 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.content-refreshing {
+  opacity: 0.5;
+  pointer-events: none; /* prevent accidental clicks while stale */
+  transition: opacity 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+
 /* ── Typography ──────────────────────────────────────────────────────────────── */
 h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
 h2 { font-size: 1.1rem; font-weight: 600; letter-spacing: -0.01em; }
